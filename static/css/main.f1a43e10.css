@@ -1,0 +1,2 @@
+@tailwind base;@tailwind components;@tailwind utilities;@layer base{#root,body,html{background-color:#030712;color-scheme:dark}*{scrollbar-color:#374151 #0000;scrollbar-width:thin}::-webkit-scrollbar{height:6px;width:6px}::-webkit-scrollbar-track{background:#0000}::-webkit-scrollbar-thumb{background-color:#374151;border-radius:9999px}}
+/*# sourceMappingURL=main.f1a43e10.css.map*/

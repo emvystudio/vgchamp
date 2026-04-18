@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/vgchamp/static/css/main.f1a43e10.css",
+    "main.js": "/vgchamp/static/js/main.eaa44102.js",
+    "static/js/453.77397fdf.chunk.js": "/vgchamp/static/js/453.77397fdf.chunk.js",
+    "index.html": "/vgchamp/index.html",
+    "main.f1a43e10.css.map": "/vgchamp/static/css/main.f1a43e10.css.map",
+    "main.eaa44102.js.map": "/vgchamp/static/js/main.eaa44102.js.map",
+    "453.77397fdf.chunk.js.map": "/vgchamp/static/js/453.77397fdf.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.f1a43e10.css",
+    "static/js/main.eaa44102.js"
+  ]
+}
