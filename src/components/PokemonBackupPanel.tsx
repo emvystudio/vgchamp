@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { PokemonWithStats } from '../types/pokemonChampions';
 import { TYPE_COLORS } from '../utils/typeEffectiveness';
 
@@ -7,6 +7,9 @@ interface PokemonBackupPanelProps {
   onRemoveFromBackup: (index: number) => void;
   onSwapInBackup: (index: number) => void;
   isSwapMode: boolean;
+  onDropOnBackup?: (pokemon: PokemonWithStats, targetIndex: number) => void;
+  onDragStart?: (pokemon: PokemonWithStats, source: 'list' | 'party' | 'backup') => void;
+  onDragEnd?: () => void;
 }
 
 function getPokemonImageUrl(dexNumber: number): string {
@@ -18,9 +21,53 @@ const PokemonBackupPanel: React.FC<PokemonBackupPanelProps> = ({
   onRemoveFromBackup,
   onSwapInBackup,
   isSwapMode,
+  onDropOnBackup,
+  onDragStart,
+  onDragEnd,
 }) => {
+  const [hoveredEmptyIndex, setHoveredEmptyIndex] = useState<number | null>(null);
   const filledCount = backupParty.filter(Boolean).length;
-  if (filledCount === 0) return null;
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDragEnter = (index: number) => {
+    if (backupParty[index] === null) {
+      setHoveredEmptyIndex(index);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setHoveredEmptyIndex(null);
+  };
+
+  const handleDropOnEmpty = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    try {
+      const pokemon = JSON.parse(e.dataTransfer.getData('text/plain')) as PokemonWithStats;
+      if (onDropOnBackup) {
+        onDropOnBackup(pokemon, index);
+      }
+    } catch (err) {
+      console.error('Failed to parse dropped data:', err);
+    }
+  };
+
+  const handleDragStart = (e: React.DragEvent, pokemon: PokemonWithStats) => {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', JSON.stringify(pokemon));
+    if (onDragStart) {
+      onDragStart(pokemon, 'backup');
+    }
+  };
+
+  const handleDragEnd = () => {
+    if (onDragEnd) {
+      onDragEnd();
+    }
+  };
 
   return (
     <div className="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
@@ -35,7 +82,13 @@ const PokemonBackupPanel: React.FC<PokemonBackupPanelProps> = ({
             return (
               <div
                 key={index}
-                className="rounded-lg border border-dashed border-gray-800 h-16 flex items-center justify-center text-gray-800 text-lg"
+                onDragOver={handleDragOver}
+                onDragEnter={() => handleDragEnter(index)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDropOnEmpty(e, index)}
+                className={`rounded-lg border border-dashed h-16 flex items-center justify-center text-gray-800 text-lg transition-colors ${
+                  hoveredEmptyIndex === index ? 'border-white bg-gray-700' : 'border-gray-800 hover:border-gray-700 hover:text-gray-600'
+                }`}
               >
                 +
               </div>
@@ -45,7 +98,10 @@ const PokemonBackupPanel: React.FC<PokemonBackupPanelProps> = ({
           return (
             <div
               key={index}
-              className={`relative rounded-lg border transition-colors group ${
+              draggable
+              onDragStart={(e) => handleDragStart(e, pokemon)}
+              onDragEnd={handleDragEnd}
+              className={`relative rounded-lg border transition-colors group cursor-move ${
                 isSwapMode
                   ? 'border-amber-700/60 bg-amber-950/20'
                   : 'border-gray-700 bg-gray-800/60 hover:border-gray-600'

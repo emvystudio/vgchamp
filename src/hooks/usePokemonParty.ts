@@ -6,6 +6,7 @@ export interface UsePokemonPartyReturn {
   backupParty: (PokemonWithStats | null)[];
   partyMoves: ([string, string, string, string] | null)[];
   addToParty: (pokemon: PokemonWithStats) => void;
+  addToBackup: (pokemon: PokemonWithStats) => void;
   removeFromParty: (index: number) => void;
   removeFromBackup: (index: number) => void;
   swapInParty: (index: number, pokemon: PokemonWithStats) => void;
@@ -26,6 +27,19 @@ export const usePokemonParty = (): UsePokemonPartyReturn => {
 
   const addToParty = useCallback((pokemon: PokemonWithStats) => {
     setParty(current => {
+      const next = [...current];
+      const emptyIndex = next.findIndex(slot => slot === null);
+      if (emptyIndex !== -1) {
+        next[emptyIndex] = pokemon;
+      } else {
+        next[0] = pokemon;
+      }
+      return next;
+    });
+  }, []);
+
+  const addToBackup = useCallback((pokemon: PokemonWithStats) => {
+    setBackupParty(current => {
       const next = [...current];
       const emptyIndex = next.findIndex(slot => slot === null);
       if (emptyIndex !== -1) {
@@ -120,6 +134,7 @@ export const usePokemonParty = (): UsePokemonPartyReturn => {
     backupParty,
     partyMoves,
     addToParty,
+    addToBackup,
     removeFromParty,
     removeFromBackup,
     swapInParty,

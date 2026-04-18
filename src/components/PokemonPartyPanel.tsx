@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { PokemonWithStats } from '../types/pokemonChampions';
 import { TYPE_COLORS, getWeaknesses } from '../utils/typeEffectiveness';
 import {
@@ -17,6 +17,9 @@ interface PokemonPartyPanelProps {
   onFindSimilar: (index: number) => void;
   isSwapMode: boolean;
   similarToIndex: number | null;
+  onDropOnParty?: (pokemon: PokemonWithStats, targetIndex: number) => void;
+  onDragStart?: (pokemon: PokemonWithStats, source: 'list' | 'party' | 'backup') => void;
+  onDragEnd?: () => void;
 }
 
 function getPokemonImageUrl(dexNumber: number): string {
@@ -33,7 +36,12 @@ const PokemonPartyPanel: React.FC<PokemonPartyPanelProps> = ({
   onFindSimilar,
   isSwapMode,
   similarToIndex,
+  onDropOnParty,
+  onDragStart,
+  onDragEnd,
 }) => {
+  const [hoveredEmptyIndex, setHoveredEmptyIndex] = useState<number | null>(null);
+  
   const weaknessAnalysis = useMemo(() => analyzePartyWeaknesses(party), [party]);
   const moveAnalysis = useMemo(
     () => analyzeMoveOverlap(partyMoves.map(m => (m ? Array.from(m) : null))),
@@ -42,6 +50,47 @@ const PokemonPartyPanel: React.FC<PokemonPartyPanelProps> = ({
 
   const filledCount = party.filter(Boolean).length;
   const hasAnyMoves = partyMoves.some(m => m?.some(v => v.trim()));
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDragEnter = (index: number) => {
+    if (party[index] === null) {
+      setHoveredEmptyIndex(index);
+    }
+  };
+
+  const handleDragLeave = () => {
+    setHoveredEmptyIndex(null);
+  };
+
+  const handleDragStart = (e: React.DragEvent, pokemon: PokemonWithStats) => {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', JSON.stringify(pokemon));
+    if (onDragStart) {
+      onDragStart(pokemon, 'party');
+    }
+  };
+
+  const handleDragEnd = () => {
+    if (onDragEnd) {
+      onDragEnd();
+    }
+  };
+
+  const handleDropOnEmpty = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    try {
+      const pokemon = JSON.parse(e.dataTransfer.getData('text/plain')) as PokemonWithStats;
+      if (onDropOnParty) {
+        onDropOnParty(pokemon, index);
+      }
+    } catch (err) {
+      console.error('Failed to parse dropped data:', err);
+    }
+  };
 
   return (
     <div className="bg-gray-900 rounded-2xl border border-gray-800 shadow-2xl overflow-hidden">
@@ -69,7 +118,13 @@ const PokemonPartyPanel: React.FC<PokemonPartyPanelProps> = ({
             return (
               <div
                 key={index}
-                className="rounded-xl border-2 border-dashed border-gray-800 min-h-[180px] flex flex-col items-center justify-center text-gray-700 hover:border-gray-700 hover:text-gray-600 transition-colors"
+                onDragOver={handleDragOver}
+                onDragEnter={() => handleDragEnter(index)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDropOnEmpty(e, index)}
+                className={`rounded-xl border-2 border-dashed min-h-[180px] flex flex-col items-center justify-center text-gray-700 transition-colors ${
+                  hoveredEmptyIndex === index ? 'border-white bg-gray-700' : 'border-gray-800 hover:border-gray-700 hover:text-gray-600'
+                }`}
               >
                 <span className="text-3xl leading-none mb-1">+</span>
                 <span className="text-xs">Empty</span>
@@ -82,7 +137,10 @@ const PokemonPartyPanel: React.FC<PokemonPartyPanelProps> = ({
           return (
             <div
               key={index}
-              className={`rounded-xl border transition-all duration-150 ${
+              draggable
+              onDragStart={(e) => handleDragStart(e, pokemon)}
+              onDragEnd={handleDragEnd}
+              className={`rounded-xl border transition-all duration-150 cursor-move ${
                 isSimilarTarget
                   ? 'border-violet-500 bg-violet-950/30'
                   : isSwapMode
@@ -199,18 +257,55 @@ const PokemonPartyPanel: React.FC<PokemonPartyPanelProps> = ({
                 </div>
               </div>
 
-              {/* Move slots */}
-              <div className="px-2 pb-2 space-y-1">
-                {moves.map((move, moveIndex) => (
-                  <input
-                    key={moveIndex}
-                    type="text"
-                    value={move}
-                    placeholder={`Move ${moveIndex + 1}`}
-                    onChange={e => onMoveUpdate(index, moveIndex, e.target.value)}
-                    className={`w-full px-2 py-1 text-xs rounded-md border outline-none transition-colors ${getMoveInputClass(move, moveAnalysis)}`}
-                  />
-                ))}
+              {/* Stats and moves container */}
+              <div className="px-2 pb-2 flex gap-2">
+                {/* Stats section */}
+                <div className="flex-1 space-y-1">
+                  {/* Stat mini-bars */}
+                  <div className="space-y-0.5">
+                    {[
+                      { label: 'ATK', value: pokemon.stats.atk },
+                      { label: 'DEF', value: pokemon.stats.def },
+                      { label: 'S.ATK', value: pokemon.stats.spa },
+                      { label: 'S.DEF', value: pokemon.stats.spd },
+                      { label: 'SPD', value: pokemon.stats.spe },
+                    ].map(({ label, value }) => {
+                      const maxStat = Math.max(pokemon.stats.atk, pokemon.stats.def, pokemon.stats.spa, pokemon.stats.spd, pokemon.stats.spe, 100);
+                      return (
+                        <div key={label} className="flex items-center gap-1.5">
+                          <span className="text-xs text-gray-500 w-10 text-right flex-shrink-0">{label}</span>
+                          <div className="flex-1 bg-gray-700 rounded-full h-1.5 overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-blue-500 transition-all"
+                              style={{ width: `${(value / maxStat) * 100}%` }}
+                            />
+                          </div>
+                          <span className="text-xs text-gray-400 w-7 text-right flex-shrink-0">{value}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  
+                  {/* Footer: HP + Total */}
+                  <div className="pt-1 border-t border-gray-700/60 flex justify-between text-xs text-gray-500">
+                    <span>HP <span className="text-gray-400 font-medium">{pokemon.stats.hp}</span></span>
+                    <span>BST <span className="text-gray-400 font-medium">{pokemon.stats.total}</span></span>
+                  </div>
+                </div>
+                
+                {/* Move slots */}
+                <div className="flex-1 space-y-1">
+                  {moves.map((move, moveIndex) => (
+                    <input
+                      key={moveIndex}
+                      type="text"
+                      value={move}
+                      placeholder={`Move ${moveIndex + 1}`}
+                      onChange={e => onMoveUpdate(index, moveIndex, e.target.value)}
+                      className={`w-full px-2 py-1 text-xs rounded-md border outline-none transition-colors ${getMoveInputClass(move, moveAnalysis)}`}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           );

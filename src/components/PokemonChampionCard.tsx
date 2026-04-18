@@ -9,6 +9,9 @@ interface PokemonChampionCardProps {
   onAddToParty?: (pokemon: PokemonWithStats) => void;
   isSwapMode?: boolean;
   onSwapSelect?: (pokemon: PokemonWithStats) => void;
+  draggable?: boolean;
+  onDragStart?: (pokemon: PokemonWithStats) => void;
+  onDragEnd?: () => void;
 }
 
 function getPokemonImageUrl(dexNumber: number): string {
@@ -38,6 +41,9 @@ const PokemonChampionCard: React.FC<PokemonChampionCardProps> = ({
   onAddToParty,
   isSwapMode = false,
   onSwapSelect,
+  draggable = false,
+  onDragStart,
+  onDragEnd,
 }) => {
   const { champion, stats } = pokemon;
 
@@ -48,6 +54,20 @@ const PokemonChampionCard: React.FC<PokemonChampionCardProps> = ({
       onAddToParty(pokemon);
     } else {
       onClick(pokemon);
+    }
+  };
+
+  const handleDragStart = (e: React.DragEvent) => {
+    if (draggable && onDragStart) {
+      onDragStart(pokemon);
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', JSON.stringify(pokemon));
+    }
+  };
+
+  const handleDragEnd = () => {
+    if (onDragEnd) {
+      onDragEnd();
     }
   };
 
@@ -63,11 +83,14 @@ const PokemonChampionCard: React.FC<PokemonChampionCardProps> = ({
   return (
     <div
       onClick={handleClick}
+      draggable={draggable}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
       className={`bg-gray-800 border rounded-xl p-3 cursor-pointer transition-all duration-150 hover:shadow-lg hover:shadow-black/30 group ${
         isSwapMode
           ? 'border-amber-600/60 hover:border-amber-500 hover:bg-amber-950/20'
           : 'border-gray-700 hover:border-blue-500/60 hover:bg-gray-750'
-      }`}
+      } ${draggable ? 'cursor-move' : ''}`}
     >
       {/* Header: sprite + name */}
       <div className="flex items-center gap-3 mb-2">

@@ -3,18 +3,17 @@ import { SearchIcon } from '@heroicons/react/outline';
 
 interface InstantSearchBarProps {
   onSearch: (query: string) => void;
+  query: string;
   placeholder?: string;
 }
 
 const InstantSearchBar: React.FC<InstantSearchBarProps> = ({ 
   onSearch, 
+  query,
   placeholder = "Search Pokemon by name, type, or ability..." 
 }) => {
-  const [query, setQuery] = useState('');
-
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newQuery = e.target.value;
-    setQuery(newQuery);
     onSearch(newQuery);
   }, [onSearch]);
 
