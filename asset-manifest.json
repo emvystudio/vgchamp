@@ -1,15 +1,15 @@
 {
   "files": {
-    "main.css": "/vgchamp/static/css/main.c6c9985c.css",
-    "main.js": "/vgchamp/static/js/main.e0761077.js",
+    "main.css": "/vgchamp/static/css/main.d8d27884.css",
+    "main.js": "/vgchamp/static/js/main.a2f5640b.js",
     "static/js/453.77397fdf.chunk.js": "/vgchamp/static/js/453.77397fdf.chunk.js",
     "index.html": "/vgchamp/index.html",
-    "main.c6c9985c.css.map": "/vgchamp/static/css/main.c6c9985c.css.map",
-    "main.e0761077.js.map": "/vgchamp/static/js/main.e0761077.js.map",
+    "main.d8d27884.css.map": "/vgchamp/static/css/main.d8d27884.css.map",
+    "main.a2f5640b.js.map": "/vgchamp/static/js/main.a2f5640b.js.map",
     "453.77397fdf.chunk.js.map": "/vgchamp/static/js/453.77397fdf.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.c6c9985c.css",
-    "static/js/main.e0761077.js"
+    "static/css/main.d8d27884.css",
+    "static/js/main.a2f5640b.js"
   ]
 }
